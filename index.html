@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>26考研倒计时</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(to right, #ff9a9e, #fad0c4);
+            color: #333;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            min-height: 100vh;
+        }
+        h1 {
+            font-size: 2.5em;
+            margin: 20px 0;
+        }
+        .countdown {
+            font-size: 1.5em;
+            margin: 20px 0;
+        }
+        .calendar {
+            width: 90%;
+            max-width: 600px;
+            background: #fff;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            padding: 20px;
+            margin-top: 20px;
+        }
+        .calendar-header {
+            text-align: center;
+        }
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 5px;
+            margin-top: 10px;
+        }
+        .calendar-day {
+            padding: 10px;
+            text-align: center;
+            background: #f0f0f0;
+            border-radius: 5px;
+        }
+        .calendar-day.today {
+            background: #ffd700;
+            font-weight: bold;
+        }
+        .study-list {
+            width: 90%;
+            max-width: 600px;
+            background: #fff;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            padding: 20px;
+            margin-top: 20px;
+        }
+        .study-list h2 {
+            margin-bottom: 10px;
+        }
+        .study-list input, .study-list button {
+            padding: 10px;
+            margin: 5px 0;
+            width: 100%;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 1em;
+        }
+        .study-list ul {
+            list-style: none;
+            padding: 0;
+        }
+        .study-list li {
+            background: #fafafa;
+            border: 1px solid #ddd;
+            padding: 10px;
+            margin: 5px 0;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <h1>26考研倒计时</h1>
+    <div class="countdown" id="countdown"></div>
+    <div class="calendar">
+        <h2 class="calendar-header" id="calendar-header"></h2>
+        <div class="calendar-grid" id="calendar-grid"></div>
+    </div>
+    <div class="study-list">
+        <h2>今天的学习计划</h2>
+        <input type="text" id="task-name" placeholder="学习内容">
+        <input type="time" id="start-time" placeholder="开始时间">
+        <input type="time" id="end-time" placeholder="结束时间">
+        <button id="add-task">添加任务</button>
+        <ul id="task-list"></ul>
+        <button id="export-tasks">导出任务列表</button>
+    </div>
+    <script>
+        // 倒计时功能
+        const countdownElement = document.getElementById('countdown');
+        const targetDate = new Date('2025-12-21T00:00:00');
+
+        function updateCountdown() {
+            const now = new Date();
+            const diff = targetDate - now;
+
+            if (diff <= 0) {
+                countdownElement.textContent = '考试时间已到！';
+                return;
+            }
+
+            const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+            const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+
+            countdownElement.textContent = `${days}天 ${hours}小时 ${minutes}分钟 ${seconds}秒`;
+        }
+
+        setInterval(updateCountdown, 1000);
+
+        // 日历功能
+        const calendarHeader = document.getElementById('calendar-header');
+        const calendarGrid = document.getElementById('calendar-grid');
+        const today = new Date();
+
+        function renderCalendar() {
+            calendarGrid.innerHTML = '';
+            const year = today.getFullYear();
+            const month = today.getMonth();
+
+            calendarHeader.textContent = `${year}年${month + 1}月`;
+
+            const firstDay = new Date(year, month, 1).getDay();
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+            for (let i = 0; i < firstDay; i++) {
+                const emptyCell = document.createElement('div');
+                calendarGrid.appendChild(emptyCell);
+            }
+
+            for (let day = 1; day <= daysInMonth; day++) {
+                const dayCell = document.createElement('div');
+                dayCell.textContent = day;
+                dayCell.className = 'calendar-day';
+                if (day === today.getDate()) {
+                    dayCell.classList.add('today');
+                }
+                calendarGrid.appendChild(dayCell);
+            }
+        }
+
+        renderCalendar();
+
+        // 学习计划功能
+        const taskNameInput = document.getElementById('task-name');
+        const startTimeInput = document.getElementById('start-time');
+        const endTimeInput = document.getElementById('end-time');
+        const addTaskButton = document.getElementById('add-task');
+        const taskList = document.getElementById('task-list');
+        const exportButton = document.getElementById('export-tasks');
+        let tasks = [];
+
+        function addTask() {
+            const taskName = taskNameInput.value.trim();
+            const startTime = startTimeInput.value;
+            const endTime = endTimeInput.value;
+
+            if (!taskName || !startTime || !endTime) {
+                alert('请完整填写任务信息！');
+                return;
+            }
+
+            const task = {
+                name: taskName,
+                start: startTime,
+                end: endTime,
+                duration: calculateDuration(startTime, endTime)
+            };
+
+            tasks.push(task);
+            renderTask(task);
+            taskNameInput.value = '';
+            startTimeInput.value = '';
+            endTimeInput.value = '';
+        }
+
+        function calculateDuration(start, end) {
+            const [startHour, startMinute] = start.split(':').map(Number);
+            const [endHour, endMinute] = end.split(':').map(Number);
+
+            const startDate = new Date(0, 0, 0, startHour, startMinute);
+            const endDate = new Date(0, 0, 0, endHour, endMinute);
+
+            const diff = (endDate - startDate) / (1000 * 60); // duration in minutes
+            const hours = Math.floor(diff / 60);
+            const minutes = diff % 60;
+
+            return `${hours}小时${minutes}分钟`;
+        }
+
+        function renderTask(task) {
+            const li = document.createElement('li');
+            li.textContent = `${task.name} (${task.start} - ${task.end}, ${task.duration})`;
+            taskList.appendChild(li);
+        }
+
+        function exportTasks() {
+            const content = tasks.map(task => `- **${task.name}**\n  - 开始时间: ${task.start}\n  - 结束时间: ${task.end}\n  - 持续时间: ${task.duration}`).join('\n\n');
+            const blob = new Blob([content], { type: 'text/markdown' });
+            const url = URL.createObjectURL(blob);
+
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'study_tasks.md';
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        addTaskButton.addEventListener('click', addTask);
+        exportButton.addEventListener('click',
